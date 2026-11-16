@@ -3,8 +3,6 @@ name: Build HISHH Money Manager APK
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
 
 permissions:
   contents: read
@@ -20,7 +18,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Prepare app folder
+      - name: Prepare Android project
         run: |
           mkdir -p app/src/main/assets
           mkdir -p app/src/main/java/com/hishh/moneymanager
@@ -29,7 +27,11 @@ jobs:
           cp MainActivity.java app/src/main/java/com/hishh/moneymanager/
           cp index.html app/src/main/assets/
           cp styles.xml app/src/main/res/values/
-          cat > app/build.gradle <<'GRADLE'
+          echo "pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }" > settings.gradle
+          echo "rootProject.name = 'HISHH-MONEY-MANAGER'" >> settings.gradle
+          echo "include ':app'" >> settings.gradle
+          echo "plugins { id 'com.android.application' version '8.7.3' apply false }" > build.gradle
+          cat > app/build.gradle <<'EOF'
           plugins { id 'com.android.application' }
           android {
             namespace 'com.hishh.moneymanager'
@@ -39,19 +41,18 @@ jobs:
               minSdk 23
               targetSdk 35
               versionCode 1
-              versionName '1.0.0'
+              versionName '1.0'
             }
           }
-          GRADLE
+          EOF
 
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - run: gradle --no-daemon assembleDebug
+      - run: gradle assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
-          name: HISHH-MONEY-MANAGER-debug-apk
+          name: HISHH-MONEY-MANAGER-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          
